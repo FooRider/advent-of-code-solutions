@@ -27,12 +27,10 @@ while (await sr.ReadLineAsync() is { } line && !string.IsNullOrEmpty(line))
     pageOrders.Add(pages);
 }
 
+List<List<int>> failingPageOrders = [];
 {
     Console.WriteLine("Part 1");
-
-    
     var passedSum = 0;
-
     foreach (var po in pageOrders)
     {
         var rules = orderingRules.Select(pages => new RuleStatus(pages.Item1, pages.Item2)).ToList();
@@ -49,8 +47,37 @@ while (await sr.ReadLineAsync() is { } line && !string.IsNullOrEmpty(line))
 
         if (!failingRules.Any())
             passedSum += po[(po.Count / 2)];
+        else
+            failingPageOrders.Add(po);
     }
     Console.WriteLine(passedSum);
+}
+
+{
+    Console.WriteLine("Part 2");
+    var fixedSum = 0;
+    foreach (var po in failingPageOrders)
+    {
+        var remainingRules = orderingRules.Where(pages => po.Contains(pages.Item1) && po.Contains(pages.Item2)).ToList();
+        var remainingPages = po.ToList();
+
+        var newOrder = new List<int>();
+        while (remainingPages.Any())
+        {
+            var minPages = remainingPages.Where(p => remainingRules.All(r => r.Item2 != p)).ToList();
+            foreach (var page in minPages)
+            {
+                newOrder.Add(page);
+                remainingPages.Remove(page);
+                remainingRules.RemoveAll(r => r.Item2 == page || r.Item1 == page);
+            }
+            if (!minPages.Any())
+                throw new Exception();
+        }
+
+        fixedSum += newOrder[newOrder.Count / 2];
+    }
+    Console.WriteLine(fixedSum);
 }
 
 record RuleStatus(int Page1, int Page2)
