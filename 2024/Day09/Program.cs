@@ -1,4 +1,6 @@
 ﻿using Block = (int PositionOnDisk, int FileIdx, int PositionInFile, bool IsFile);
+using ContiguousFile = (int PositionOnDisk, int Size, int FileIdx);
+using ContiguousFreeSpace = (int PositionOnDisk, int Size);
 
 using var fh = File.OpenText("input1.txt");
 
@@ -82,3 +84,58 @@ var diskMap = diskMapStr!.Select(ch => (byte)(ch - '0')).ToArray();
         }
     }
 }
+
+{
+    Console.WriteLine("Part 2");
+
+    var fileMap = new List<ContiguousFile>();
+    var freeSpaceMap = new List<ContiguousFreeSpace>();
+
+    bool isFile = false;
+    int fileIdx = 0;
+    int positionOnDisk = 0;
+    foreach (var size in diskMap)
+    {
+        isFile = !isFile;
+        if (isFile)
+            fileMap.Add((positionOnDisk, size, fileIdx++));
+        else
+            freeSpaceMap.Add((positionOnDisk, size));
+        positionOnDisk += size;
+    }
+
+    var allFilesFromEnd = fileMap.AsEnumerable().Reverse().ToArray();
+    foreach (var file in allFilesFromEnd)
+    {
+        var targetPosition = freeSpaceMap
+            .Cast<ContiguousFreeSpace?>()
+            .Select(fs => fs)
+            .FirstOrDefault(fs => fs.HasValue && fs.Value.Size >= file.Size);
+
+        if (targetPosition.HasValue && targetPosition.Value.PositionOnDisk < file.PositionOnDisk)
+        {
+            fileMap.Remove(file);
+            fileMap.Add((targetPosition.Value.PositionOnDisk, file.Size, file.FileIdx));
+            var fsIdx = freeSpaceMap.FindIndex(fs => fs.PositionOnDisk == targetPosition.Value.PositionOnDisk);
+            freeSpaceMap[fsIdx] = (targetPosition.Value.PositionOnDisk + file.Size, targetPosition.Value.Size - file.Size);
+        }
+    }
+
+    ContiguousFile prevFile = (0, 0, 0);
+    long checksum = 0;
+    foreach (var file in fileMap.OrderBy(fm => fm.PositionOnDisk))
+    {
+        for (int i = prevFile.PositionOnDisk + prevFile.Size; i < file.PositionOnDisk; i++)
+        {
+            //Console.Write('.');
+        }
+        for (int i = 0; i < file.Size; i++)
+        {
+            checksum += (file.PositionOnDisk + i) * file.FileIdx;
+            //Console.Write(file.FileIdx);
+        }
+        prevFile = file;
+    }
+    Console.WriteLine(checksum);
+}
+
