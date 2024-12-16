@@ -86,6 +86,26 @@ public class SolverTests
         Assert.Equal(expectedAnswer, answer);
     }
     
+    [Theory]
+    [InlineData(TestInput0, 80)]
+    [InlineData(TestInput1, 436)]
+    [InlineData(TestInput2, 1206)]
+    public async Task Part2TestCases(string testInput, long expectedAnswer)
+    {
+        using var sr = new StringReader(testInput);
+        var map = await Solver.LoadMapAsync(sr);
+        var answer = Solver.Part2(map);
+        Assert.Equal(expectedAnswer, answer);
+    }
+
+    [Fact]
+    public void TestContiguousInterval()
+    {
+        Assert.Equal(0, Solver.GetContiguousIntervals([]));
+        Assert.Equal(1, Solver.GetContiguousIntervals(Enumerable.Range(0, 10)));
+        Assert.Equal(2, Solver.GetContiguousIntervals(Enumerable.Range(0, 10).Concat(Enumerable.Range(12, 10))));
+    }
+    
     private IEnumerable<T> AllValues<T>(T[,] array) 
     {
         for (int i = 0; i < array.GetLength(0); i++)

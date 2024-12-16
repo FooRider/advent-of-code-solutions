@@ -76,6 +76,57 @@ public class Solver
         return (area, perimeter);
     }
 
+    public static IEnumerable<FenceSegment> EnumerateFenceSegments(bool[,] regionMask)
+    {
+        var width = regionMask.GetLength(0);
+        var height = regionMask.GetLength(1);
+        foreach (var (x, y) in ForAllCoords(regionMask))
+        {
+            if (!regionMask[x, y]) continue;
+            if (x == 0 || !regionMask[x - 1, y])
+                yield return new FenceSegment(FenceLocation.West, x, y);
+            if (y == 0 || !regionMask[x, y - 1])
+                yield return new FenceSegment(FenceLocation.North, x, y);
+            if (x == width - 1 || !regionMask[x + 1, y])
+                yield return new FenceSegment(FenceLocation.East, x, y);
+            if (y == height - 1 || !regionMask[x, y + 1])
+                yield return new FenceSegment(FenceLocation.South, x, y);
+        }
+    }
+
+    public static int CountFenceSides(bool[,] regionMask)
+    {
+        var t = EnumerateFenceSegments(regionMask)
+            .GroupBy(fs => fs.Location)
+            .ToDictionary(g => g.Key);
+
+        int result = 0;
+
+        foreach (var l in new[] { FenceLocation.West, FenceLocation.East })
+        foreach (var row in t[l].GroupBy(fs => fs.X))
+            result += GetContiguousIntervals(row.Select(fs => fs.Y));
+        
+        foreach (var l in new[] { FenceLocation.North, FenceLocation.South })
+        foreach (var col in t[l].GroupBy(fs => fs.Y))
+            result += GetContiguousIntervals(col.Select(fs => fs.X));
+        
+        return result;
+    }
+
+    public static int GetContiguousIntervals(IEnumerable<int> data)
+    {
+        var intervals = 0;
+        int? last = null;
+        foreach (var i in data.OrderBy(i => i))
+        {
+            if (i - 1 != last)
+                intervals++;
+            last = i;
+        }
+
+        return intervals;
+    }
+
     public static long Part1(char[,] map)
     {
         long price = 0;
@@ -83,6 +134,19 @@ public class Solver
         {
             var measurements = MeasureRegion(region.Item2);
             price += measurements.Area * measurements.Perimeter;
+        }
+
+        return price;
+    }
+    
+    public static long Part2(char[,] map)
+    {
+        long price = 0;
+        foreach (var region in ExtractAllRegions(map))
+        {
+            var measurements = MeasureRegion(region.Item2);
+            var numSides = CountFenceSides(region.Item2);
+            price += measurements.Area * numSides;
         }
 
         return price;
@@ -105,3 +169,9 @@ public class Solver
             yield return (x, y);
     }
 }
+
+public enum FenceLocation
+{
+    North, East, South, West
+}
+public record struct FenceSegment(FenceLocation Location, int X, int Y);
