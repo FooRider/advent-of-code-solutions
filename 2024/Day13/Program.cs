@@ -9,6 +9,8 @@ while (await Solver.TryLoadAsync(fh) is { } cm)
 {
     sumPart1 += Solver.SolveClawMachinePart1(cm);
     sumPart2 += Solver.SolveClawMachinePart2(cm);
+    if (Solver.AreLinearlyDependent(cm.A, cm.B))
+        Console.WriteLine($"Warning, Linearly dependent: {cm.A}, {cm.B}");
 }
 
 Console.WriteLine($"Part 1: {sumPart1}");

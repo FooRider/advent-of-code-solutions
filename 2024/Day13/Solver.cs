@@ -73,6 +73,30 @@ public class Solver
         return new ClawMachine(a, b, prize);
     }
 
+    public static bool AreLinearlyDependent(long[] a, long[] b)
+    {
+        var an = SimplifyFraction(a[0], a[1]);
+        var bn = SimplifyFraction(b[0], b[1]);
+        return an == bn;
+    }
+
+    public static (long, long) SimplifyFraction(long a1, long a2)
+    {
+        var gcd = GCD(a1, a2);
+        if (gcd <= 1) return (a1, a2);
+        return (a1 / gcd, a2 / gcd);
+    }
+
+    public static long GCD(long a, long b)
+    {
+        if (a == b) return a;
+        if (a < b) return GCD(b, a);
+        if (b < 0) return GCD(a, -b);
+        if (a < 0) return GCD(-a, b);
+        if (b == 0) return a;
+        return GCD(b, a % b);
+    }
+
     private static long[] ParseVector(ReadOnlySpan<char> input)
     {
         var xPos = input.IndexOf('X');
