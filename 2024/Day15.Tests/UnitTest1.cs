@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text;
+using Newtonsoft.Json;
 using Xunit.Abstractions;
 
 namespace Day15.Tests;
@@ -81,7 +82,108 @@ public class UnitTest1
         var (mapState, movements) = Solver.LoadInput(sr);
         Assert.Equal(104, Solver.Evaluate(mapState));
     }
-    
+
+    [Fact]
+    public void TestPart2()
+    {
+        using var sr = new StringReader(TestInput2);
+        var (mapState, movements) = Solver.LoadInput(sr);
+        mapState = Solver.WidenMap(mapState);
+        mapState.Map[4, 10] = MapObject.Box;
+        mapState.Map[4, 12] = MapObject.Box;
+        mapState.Map[5, 11] = MapObject.Box;
+        
+        var sw = new StringWriter();
+        Solver.WriteState(mapState, sw, true);
+        _output.WriteLine(sw.ToString());
+
+        var (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 4), AttemptedMovement.Left);
+        Assert.False(canMove); Assert.Empty(boxesToMove);
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 5), AttemptedMovement.Left);
+        Assert.True(canMove); Assert.Empty(boxesToMove);
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 5), AttemptedMovement.Up);
+        Assert.True(canMove); Assert.Empty(boxesToMove);
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 6), AttemptedMovement.Up);
+        Assert.False(canMove); Assert.Empty(boxesToMove);
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 7), AttemptedMovement.Right);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove, i => Assert.Equal((2, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (2, 10), AttemptedMovement.Left);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove, i => Assert.Equal((2, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (1, 8), AttemptedMovement.Down);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove.OrderBy(i => i.Item1), 
+            i => Assert.Equal((2, 8), i),
+            i => Assert.Equal((3, 8), i),
+            i => Assert.Equal((4, 8), i),
+            i => Assert.Equal((5, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (1, 9), AttemptedMovement.Down);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove.OrderBy(i => i.Item1), 
+            i => Assert.Equal((2, 8), i),
+            i => Assert.Equal((3, 8), i),
+            i => Assert.Equal((4, 8), i),
+            i => Assert.Equal((5, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (6, 8), AttemptedMovement.Up);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove.OrderBy(i => i.Item1), 
+            i => Assert.Equal((2, 8), i),
+            i => Assert.Equal((3, 8), i),
+            i => Assert.Equal((4, 8), i),
+            i => Assert.Equal((5, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (6, 9), AttemptedMovement.Up);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove.OrderBy(i => i.Item1), 
+            i => Assert.Equal((2, 8), i),
+            i => Assert.Equal((3, 8), i),
+            i => Assert.Equal((4, 8), i),
+            i => Assert.Equal((5, 8), i));
+        
+        (canMove, boxesToMove) = Solver.CanMove(mapState.Map, (6, 11), AttemptedMovement.Up);
+        Assert.True(canMove);
+        Assert.Collection(boxesToMove.OrderBy(i => i.Item1).ThenBy(i => i.Item2), 
+            i => Assert.Equal((4, 10), i),
+            i => Assert.Equal((4, 12), i),
+            i => Assert.Equal((5, 11), i));
+    }
+
+    [Fact]
+    public void Simulate2()
+    {
+        using var sr = new StringReader(TestInput1);
+        var (mapState, movements) = Solver.LoadInput(sr);
+        mapState = Solver.WidenMap(mapState);
+        
+        var sw = new StringWriter();
+        Solver.WriteState(mapState, sw, true);
+        _output.WriteLine(sw.ToString());
+
+        foreach (var attemptedMovement in movements)
+        {
+            mapState = Solver.SimulateWide(mapState, attemptedMovement);
+            sw = new StringWriter();
+            Solver.WriteState(mapState, sw, true);
+            _output.WriteLine(sw.ToString());
+        }
+        
+        Assert.Equal(9021, Solver.Evaluate(mapState));
+    }
+
+    [Fact]
+    public void TestPart2Cases()
+    {
+        using var sr = new StringReader(TestInput1);
+        var (mapState, movements) = Solver.LoadInput(sr);
+        Assert.Equal(9021, Solver.SolvePart2(mapState, movements));
+    }
+
     public const string TestInput2 =
         """
         ########
