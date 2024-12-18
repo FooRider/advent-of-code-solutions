@@ -38,6 +38,32 @@ public static class GraphSearch
         var result = visitedNodes.Where(vn => resultPredicate((vn.Node, vn.Rank))).ToList();
         return result;
     }
+    
+    public static IReadOnlyCollection<(Node<TN, TE> Node, int Rank)> BreadthFirstSearch2<TN, TE>(
+        Node<TN, TE> startNode,
+        Func<Edge<TN, TE>, int> edgePrice,
+        Predicate<(Node<TN, TE> Node, int Rank)> resultPredicate)
+    {
+        List<(Node<TN, TE> Node, int Rank)> visitedNodes = [(startNode, 0)];
+        
+        var edgesToTraverse = startNode.OutgoingEdges.Select(e => (e, 1)).ToList();
+
+        while (edgesToTraverse.Any())
+        {
+            var edgeT = edgesToTraverse.OrderBy(et => et.Item2).First();
+            edgesToTraverse.Remove(edgeT);
+            
+            var (edge, nextNodeRank) = edgeT;
+            if (visitedNodes.Any(vn => vn.Node == edge.Target))
+                continue;
+            visitedNodes.Add((edge.Target, nextNodeRank));
+            foreach (var nextEdge in edge.Target.OutgoingEdges)
+                edgesToTraverse.Add((nextEdge, nextNodeRank + edgePrice(nextEdge)));
+        }
+        
+        var result = visitedNodes.Where(vn => resultPredicate((vn.Node, vn.Rank))).ToList();
+        return result;
+    }
 
     public static IReadOnlyCollection<IReadOnlyCollection<(Node<TN, TE> Node, int Rank)>> DepthFirstSearch<TN, TE>(
         Node<TN, TE> startNode,
