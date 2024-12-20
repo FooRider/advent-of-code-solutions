@@ -1,4 +1,6 @@
-﻿namespace Common.Graphs;
+﻿using System.Text;
+
+namespace Common.Graphs;
 public record Node<TN, TE>(TN Value)
 {
     public List<Edge<TN, TE>> OutgoingEdges { get; } = [];
@@ -42,23 +44,21 @@ public static class GraphSearch
     public static IReadOnlyCollection<(Node<TN, TE> Node, int Rank)> BreadthFirstSearch2<TN, TE>(
         Node<TN, TE> startNode,
         Func<Edge<TN, TE>, int> edgePrice,
-        Predicate<(Node<TN, TE> Node, int Rank)> resultPredicate)
+        Predicate<(Node<TN, TE> Node, int Rank)> resultPredicate,
+        Predicate<(Node<TN, TE> Node, int Rank)>? stopPredicate = null)
     {
         List<(Node<TN, TE> Node, int Rank)> visitedNodes = [(startNode, 0)];
         
-        var edgesToTraverse = startNode.OutgoingEdges.Select(e => (e, 1)).ToList();
+        var edgesToTraverse = new PriorityQueue<Edge<TN, TE>, int>(startNode.OutgoingEdges.Select(e => (e, edgePrice(e))));
 
-        while (edgesToTraverse.Any())
+        while (edgesToTraverse.TryDequeue(out var edge, out var nextNodeRank))
         {
-            var edgeT = edgesToTraverse.OrderBy(et => et.Item2).First();
-            edgesToTraverse.Remove(edgeT);
-            
-            var (edge, nextNodeRank) = edgeT;
             if (visitedNodes.Any(vn => vn.Node == edge.Target))
                 continue;
             visitedNodes.Add((edge.Target, nextNodeRank));
+            if (stopPredicate?.Invoke((edge.Target, nextNodeRank)) ?? false) break;
             foreach (var nextEdge in edge.Target.OutgoingEdges)
-                edgesToTraverse.Add((nextEdge, nextNodeRank + edgePrice(nextEdge)));
+                edgesToTraverse.Enqueue(nextEdge, nextNodeRank + edgePrice(nextEdge));
         }
         
         var result = visitedNodes.Where(vn => resultPredicate((vn.Node, vn.Rank))).ToList();

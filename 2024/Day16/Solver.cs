@@ -54,9 +54,9 @@ public static class Solver
             var nw = new Node1((rowIdx, colIdx, Orientation.West));
             
             nn.LinkTargetNode(1000, ne); nn.LinkTargetNode(1000, nw);
+            ns.LinkTargetNode(1000, ne); ns.LinkTargetNode(1000, nw);
             nw.LinkTargetNode(1000, nn); nw.LinkTargetNode(1000, ns);
-            ns.LinkTargetNode(1000, nw); ns.LinkTargetNode(1000, ne);
-            ne.LinkTargetNode(1000, ns); ne.LinkTargetNode(1000, nn);
+            ne.LinkTargetNode(1000, nn); ne.LinkTargetNode(1000, ns);
 
             if ((rowIdx, colIdx) == startPosition)
                 startNode = ne;
@@ -93,9 +93,58 @@ public static class Solver
     public static long SolvePart1(Node1 startNode, List<Node1> targetNodes)
     {
         var resNodes = GraphSearch.BreadthFirstSearch2(
-            startNode, e => e.Value, n => targetNodes.Contains(n.Node));
+            startNode, 
+            e => e.Value, 
+            n => targetNodes.Contains(n.Node),
+            n => targetNodes.Contains(n.Node));
         return resNodes.OrderBy(rn => rn.Rank).First().Rank;
     }
+
+    public static (long, long) SolvePart12(Node1 startNode, List<Node1> targetNodes)
+    {
+        long? bestScore = null;
+        var resNodes = GraphSearch.BreadthFirstSearch2(
+            startNode, 
+            e => e.Value, 
+            n => true, //targetNodes.Contains(n.Node),
+            n =>
+            {
+                if (targetNodes.Contains(n.Node) && bestScore == null)
+                    bestScore = n.Rank;
+                return bestScore.HasValue && bestScore < n.Rank;
+            });
+
+        var nodesOnBestPaths = new List<Node1>();
+        var toTraverse = new Queue<(Node1 Node, long Rank)>();
+        foreach (var rn in resNodes.Where(rn => targetNodes.Contains(rn.Node)))
+            toTraverse.Enqueue(rn);
+
+        while (toTraverse.TryDequeue(out var x))
+        {
+            var (node, scoreOnPath) = x;
+            nodesOnBestPaths.Add(node);
+            foreach (var ie in node.IncomingEdges)
+            {
+                var expectedScore = scoreOnPath - ie.Value;
+                var y = resNodes.Where(n => n.Node == ie.Source).ToList();
+                if (!y.Any())
+                    continue;
+                var (_, actualScore) = y[0];
+                
+                if (actualScore != expectedScore)
+                    continue;
+                toTraverse.Enqueue((ie.Source, actualScore));
+            }
+        }
+
+        var uniquePathCoordinates = nodesOnBestPaths.Select(n => (n.Value.X, n.Value.Y))
+            .Distinct()
+            .Count();
+        
+        return (bestScore!.Value, uniquePathCoordinates);
+    }
+    
+    
 }
 
 public enum MapObject { Wall, Empty }
