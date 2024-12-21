@@ -145,6 +145,77 @@ public static class Solver
             if (col < width - 1) yield return (row, col + 1);
         }
     }
+    
+    public static IReadOnlyCollection<int> CalculateSavedTimePerLongCheat(
+        (MapPosition[,] map, (int, int) start, (int, int) end) input,
+        int minTimeDiff)
+    {
+        var result = new List<int>();
+        
+        var (map, start, end) = input;
+        var (startNode, endNode, l1Nodes, l1Nodes2d) = Solver.EmptyToGraph(map, start, end);
+        var evaluatedNodesSE = GraphSearch.BreadthFirstSearch2(
+            startNode,
+            _ => 1, 
+            _ => true, 
+            x => x.Node == endNode);
+        var (_, noCheatRank) = evaluatedNodesSE.Single(x => x.Node == endNode);
+        
+        var evaluatedNodesES = GraphSearch.BreadthFirstSearch2(
+            endNode,
+            _ => 1, 
+            _ => true,  
+            x => x.Node == startNode);
+        var (_, noCheatRankES) = evaluatedNodesSE.Single(x => x.Node == endNode);
+
+        var evaluatedSE = new int?[map.GetLength(0), map.GetLength(1)];
+        foreach (var en in evaluatedNodesSE)
+            evaluatedSE[en.Node.Value.Item1, en.Node.Value.Item2] = en.Rank;
+        var evaluatedES = new int?[map.GetLength(0), map.GetLength(1)];
+        foreach (var en in evaluatedNodesES)
+            evaluatedES[en.Node.Value.Item1, en.Node.Value.Item2] = en.Rank;
+        
+        for (var row = 0; row < map.GetLength(0); row++)
+        for (var col = 0; col < map.GetLength(1); col++)
+        {
+            if (map[row, col] == MapPosition.Wall) continue;
+
+            if (!evaluatedSE[row, col].HasValue)
+                continue;
+
+            var nodeRankFromStart = evaluatedSE[row, col]!.Value;
+            
+            for (int manhattanDistance = 1; manhattanDistance <= 20; manhattanDistance++)
+            for (int mdVertical = 0; mdVertical <= manhattanDistance; mdVertical++)
+            {
+                var mdHorizontal = manhattanDistance - mdVertical;
+                foreach (var n2r in new[] { row + mdHorizontal, row - mdHorizontal }.Distinct())
+                foreach (var n2c in new[] { col + mdVertical, col - mdVertical }.Distinct())
+                {
+                    if (n2r < 0 || n2r >= map.GetLength(0) || n2c < 0 || n2c >= map.GetLength(1))
+                        continue;
+                    
+                    var n2FromEnd = evaluatedES[n2r, n2c];
+                    if (!n2FromEnd.HasValue) continue;
+                    
+                    var timeIfShortcutUsed = nodeRankFromStart + manhattanDistance + n2FromEnd.Value;
+                    if (timeIfShortcutUsed <= noCheatRank - minTimeDiff)
+                    {
+                        result.AddRange(noCheatRank - timeIfShortcutUsed);
+                    }
+                }
+            }
+        }
+        return result;
+
+        IEnumerable<(int, int)> GetNeighbours(int row, int col, int height, int width)
+        {
+            if (row > 0) yield return (row - 1, col);
+            if (row < height - 1) yield return (row + 1, col);
+            if (col > 0) yield return (row, col - 1);
+            if (col < width - 1) yield return (row, col + 1);
+        }
+    }
 }
 
 public enum MapPosition

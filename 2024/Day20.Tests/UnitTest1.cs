@@ -65,6 +65,32 @@ public class UnitTest1
         
         Assert.Equal(11, resGrouped.Count);
     }
+    
+    [Fact]
+    public void Test3()
+    {
+        var (map, start, end) = Solver.LoadMap(TestInput1);
+        var res = Solver.CalculateSavedTimePerLongCheat((map, start, end), 50);
+        var resGrouped = res.GroupBy(timeSaved => timeSaved)
+            .ToDictionary(g => g.Key, g => g.Count());
+        
+        Assert.Equal(32, resGrouped[50]);
+        Assert.Equal(31, resGrouped[52]);
+        Assert.Equal(29, resGrouped[54]);
+        Assert.Equal(39, resGrouped[56]);
+        Assert.Equal(25, resGrouped[58]);
+        Assert.Equal(23, resGrouped[60]);
+        Assert.Equal(20, resGrouped[62]);
+        Assert.Equal(19, resGrouped[64]);
+        Assert.Equal(12, resGrouped[66]);
+        Assert.Equal(14, resGrouped[68]);
+        Assert.Equal(12, resGrouped[70]);
+        Assert.Equal(22, resGrouped[72]);
+        Assert.Equal(4, resGrouped[74]);
+        Assert.Equal(3, resGrouped[76]);
+        
+        Assert.Equal(14, resGrouped.Count);
+    }
 
     public const string TestInput1 =
         """
@@ -97,6 +123,19 @@ public class UnitTest1
         Assert.Equal(1, resGrouped[2]);
         Assert.Equal(1, resGrouped.Count);
     }
+
+    [Fact]
+    public void TestA2()
+    {
+        var (map, start, end) = Solver.LoadMap(TestInputA);
+        var res = Solver.CalculateSavedTimePerLongCheat((map, start, end), 1);
+        var resGrouped = res.GroupBy(timeSaved => timeSaved)
+            .ToDictionary(g => g.Key, g => g.Count());
+        
+        Assert.Equal(1, resGrouped[2]);
+        Assert.Equal(1, resGrouped.Count);
+    }
+    
 
     public const string TestInputA =
         """
